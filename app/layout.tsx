@@ -18,7 +18,11 @@ export const metadata: Metadata = {
   title: "The Vibey - Code Is A Vibe",
   description:
     "Platform komunitas untuk para Vibe Coder Indonesia berbagi karya, berdiskusi teknis, dan mengasah selera desain.",
-    generator: 'v0.dev'
+  generator: "v0.dev",
+  icons: {
+    icon: "/icon",
+    apple: "/apple-icon",
+  },
 }
 
 export default function RootLayout({

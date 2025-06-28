@@ -16,10 +16,10 @@ interface Category {
 }
 
 interface SidebarProps {
-  categories: Category[]
+  categories?: Category[]
 }
 
-export function Sidebar({ categories }: SidebarProps) {
+export function Sidebar({ categories = [] }: SidebarProps) {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
@@ -55,20 +55,52 @@ export function Sidebar({ categories }: SidebarProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/${category.slug}`}
-                className="block p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <Badge variant="secondary" style={{ backgroundColor: `${category.color}20`, color: category.color }}>
-                    #{category.name}
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/${category.slug}`}
+                  className="block p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <Badge
+                      variant="secondary"
+                      style={{ backgroundColor: `${category.color}20`, color: category.color }}
+                    >
+                      #{category.name}
+                    </Badge>
+                  </div>
+                  {category.description && <p className="text-xs text-gray-600 mt-1">{category.description}</p>}
+                </Link>
+              ))
+            ) : (
+              <div className="space-y-2">
+                <div className="p-3 rounded-lg border border-gray-200">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-600">
+                    #Showcase
                   </Badge>
+                  <p className="text-xs text-gray-600 mt-1">Pamer karya terbaik Anda</p>
                 </div>
-                {category.description && <p className="text-xs text-gray-600 mt-1">{category.description}</p>}
-              </Link>
-            ))}
+                <div className="p-3 rounded-lg border border-gray-200">
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-600">
+                    #DesignCrit
+                  </Badge>
+                  <p className="text-xs text-gray-600 mt-1">Minta feedback UI/UX</p>
+                </div>
+                <div className="p-3 rounded-lg border border-gray-200">
+                  <Badge variant="secondary" className="bg-green-100 text-green-600">
+                    #TechStack
+                  </Badge>
+                  <p className="text-xs text-gray-600 mt-1">Diskusi tools dan framework</p>
+                </div>
+                <div className="p-3 rounded-lg border border-gray-200">
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-600">
+                    #Ngopi
+                  </Badge>
+                  <p className="text-xs text-gray-600 mt-1">Diskusi santai</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -84,7 +116,9 @@ export function Sidebar({ categories }: SidebarProps) {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600">
-              The Vibey adalah sebuah platform komunitas online bergaya Reddit yang diciptakan khusus untuk para developer dan desainer di Indonesia yang terobsesi dengan kualitas, estetika, dan "rasa" dari sebuah produk digital.
+              The Vibey adalah sebuah platform komunitas online bergaya Reddit yang diciptakan khusus untuk para
+              developer dan desainer di Indonesia yang terobsesi dengan kualitas, estetika, dan "rasa" dari sebuah
+              produk digital.
             </p>
           </CardContent>
         </Card>

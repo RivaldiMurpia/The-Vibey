@@ -3,87 +3,77 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
+import { Logo } from "@/components/logo"
 import { Github } from "lucide-react"
-import { motion } from "framer-motion"
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  const { signIn, signInWithProvider } = useAuth()
 
-  const { signInWithEmail, signInWithGoogle, signInWithGitHub } = useAuth()
-  const router = useRouter()
-
-  const handleEmailSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError("")
+    setLoading(true)
 
     try {
-      await signInWithEmail(email, password)
-      router.push("/")
-    } catch (error: any) {
-      setError(error.message)
+      await signIn(email, password)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
-    setError("")
     try {
-      await signInWithGoogle()
-      // The redirect will happen automatically via the callback
-    } catch (error: any) {
-      setError(error.message || "Failed to sign in with Google")
+      await signInWithProvider("google")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
     }
   }
 
   const handleGitHubSignIn = async () => {
-    setError("")
     try {
-      await signInWithGitHub()
-      // The redirect will happen automatically via the callback
-    } catch (error: any) {
-      setError(error.message || "Failed to sign in with GitHub")
+      await signInWithProvider("github")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred")
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <Link href="/" className="flex items-center justify-center space-x-2 mb-4">
-            <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center">
-              <span className="text-white font-bold">V</span>
-            </div>
-            <span className="text-2xl font-bold text-gray-900">The Vibey</span>
-          </Link>
-          <p className="text-gray-600">Code Is A Vibe</p>
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <Logo size="xl" showText={true} className="justify-center mb-6" />
+          <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
+          <p className="mt-2 text-sm text-gray-600">Sign in to your account to continue the vibe</p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Sign In</CardTitle>
-            <CardDescription>Welcome back to The Vibey community</CardDescription>
+            <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" onClick={handleGoogleSignIn}>
-                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-4">
+              <Button type="button" variant="outline" className="w-full bg-transparent" onClick={handleGoogleSignIn}>
+                <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -101,11 +91,12 @@ export default function SignInPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Google
+                Continue with Google
               </Button>
-              <Button variant="outline" onClick={handleGitHubSignIn}>
-                <Github className="h-4 w-4 mr-2" />
-                GitHub
+
+              <Button type="button" variant="outline" className="w-full bg-transparent" onClick={handleGitHubSignIn}>
+                <Github className="w-4 h-4 mr-2" />
+                Continue with GitHub
               </Button>
             </div>
 
@@ -118,23 +109,30 @@ export default function SignInPage() {
               </div>
             </div>
 
-            <form onSubmit={handleEmailSignIn} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
-
-              {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
 
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
                 {loading ? "Signing in..." : "Sign In"}
@@ -142,14 +140,14 @@ export default function SignInPage() {
             </form>
 
             <div className="text-center text-sm">
-              <span className="text-gray-600">Don't have an account? </span>
+              <span className="text-muted-foreground">Don't have an account? </span>
               <Link href="/auth/signup" className="text-blue-600 hover:underline">
                 Sign up
               </Link>
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   )
 }
