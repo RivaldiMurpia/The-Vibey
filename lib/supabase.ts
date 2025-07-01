@@ -3,14 +3,14 @@ import { createClient } from "@supabase/supabase-js"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+// Validasi Environment Variables
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Supabase environment variables not found, using fallback configuration")
+  throw new Error("Supabase URL and Anon Key are required.")
 }
 
-// Create a single supabase client for interacting with your database
 export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder-anon-key",
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       autoRefreshToken: true,
