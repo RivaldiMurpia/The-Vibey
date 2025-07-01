@@ -22,8 +22,7 @@ interface Profile {
 }
 
 export default function ProfilePage() {
-  const { user, loading: authLoading } = useAuth()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const { user, profile, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -34,67 +33,21 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
-    if (user) {
-      fetchProfile()
+    if (profile) {
+      setFormData({
+        username: profile.username || "",
+        full_name: profile.full_name || "",
+        bio: profile.bio || "",
+        github_username: profile.github_username || "",
+      });
+      setLoading(false);
+    } else if (!authLoading) {
+        // Jika profile masih null setelah auth selesai loading,
+        // mungkin ada jeda replikasi db. Kita tunggu sebentar.
+        setTimeout(() => setLoading(false), 500);
     }
-  }, [user])
+  }, [profile, authLoading])
 
-  const fetchProfile = async () => {
-    if (!user) return
-
-    try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
-
-      if (error && error.code !== "PGRST116") {
-        throw error
-      }
-
-      if (data) {
-        setProfile(data)
-        setFormData({
-          username: data.username || "",
-          full_name: data.full_name || "",
-          bio: data.bio || "",
-          github_username: data.github_username || "",
-        })
-      } else {
-        // Create new profile
-        const newProfile = {
-          id: user.id,
-          username: user.email?.split("@")[0] || "",
-          full_name: user.user_metadata?.full_name || "",
-          avatar_url: null,
-          bio: null,
-          github_username: null,
-        }
-
-        const { data: createdProfile, error: createError } = await supabase
-          .from("profiles")
-          .insert(newProfile)
-          .select()
-          .single()
-
-        if (createError) throw createError
-
-        setProfile(createdProfile)
-        setFormData({
-          username: createdProfile.username,
-          full_name: createdProfile.full_name || "",
-          bio: createdProfile.bio || "",
-          github_username: createdProfile.github_username || "",
-        })
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load profile data.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSave = async () => {
     if (!user || !profile) return
@@ -118,9 +71,7 @@ export default function ProfilePage() {
         title: "Profile Updated",
         description: "Your profile has been updated successfully.",
       })
-
-      // Refresh profile data
-      await fetchProfile()
+      // Data di AuthProvider akan otomatis ter-update, tidak perlu fetch manual lagi.
     } catch (error) {
       console.error("Error updating profile:", error)
       toast({
@@ -143,8 +94,7 @@ export default function ProfilePage() {
         .eq("id", user.id)
 
       if (error) throw error
-
-      setProfile((prev) => (prev ? { ...prev, avatar_url: url } : null))
+      // Tidak perlu setProfile manual, perubahan akan dipantau oleh AuthProvider
     } catch (error) {
       console.error("Error updating avatar:", error)
       toast({
@@ -163,12 +113,12 @@ export default function ProfilePage() {
     )
   }
 
-  if (!user) {
+  if (!user || !profile) {
     return (
       <div className="container py-8">
         <Card>
           <CardContent className="pt-6">
-            <p>Please sign in to view your profile.</p>
+            <p>Could not load profile. Please try signing in again.</p>
           </CardContent>
         </Card>
       </div>
