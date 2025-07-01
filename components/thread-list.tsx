@@ -1,106 +1,177 @@
 "use client"
-
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { VoteButtons } from "@/components/vote-buttons"
-import { MessageCircle, Clock } from "lucide-react"
-import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { MessageSquare, Clock } from "lucide-react"
+import { VoteButtons } from "./vote-buttons"
+import { formatDistanceToNow } from "date-fns"
 
 interface Thread {
   id: string
   title: string
   content: string
-  category: string
   author_id: string
+  category_id: string
+  upvotes: number
+  downvotes: number
+  reply_count: number
   created_at: string
+  updated_at: string
   profiles?: {
     username: string
-    avatar_url?: string
+    avatar_url: string | null
+    full_name: string | null
   }
   categories?: {
     name: string
-    slug: string
     color: string
+    slug: string
   }
 }
 
 interface ThreadListProps {
   threads: Thread[]
+  loading?: boolean
 }
 
-export function ThreadList({ threads }: ThreadListProps) {
-  if (!threads || threads.length === 0) {
+export function ThreadList({ threads, loading = false }: ThreadListProps) {
+  if (loading) {
     return (
-      <div className="text-center py-12">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No threads yet</h3>
-        <p className="text-gray-600 mb-6">Be the first to start a discussion!</p>
-        <Link
-          href="/create"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Create Thread
-        </Link>
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader className="pb-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+    )
+  }
+
+  if (threads.length === 0) {
+    return (
+      <Card className="text-center py-12">
+        <CardContent>
+          <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No discussions yet</h3>
+          <p className="text-gray-600 mb-4">Be the first to start a conversation in this community!</p>
+          <Link href="/create">
+            <Button className="bg-lime-600 hover:bg-lime-700">Start a Discussion</Button>
+          </Link>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Latest Discussions</h2>
-      {threads.map((thread, index) => (
-        <motion.div
-          key={thread.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: index * 0.1 }}
-        >
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex space-x-4">
-                <VoteButtons threadId={thread.id} initialVotes={0} />
+      {threads.map((thread) => (
+        <Card key={thread.id} className="hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-start gap-3">
+              {/* Author Avatar */}
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={thread.profiles?.avatar_url || undefined} />
+                <AvatarFallback className="bg-lime-100 text-lime-700">
+                  {thread.profiles?.username?.[0]?.toUpperCase() ||
+                    thread.profiles?.full_name?.[0]?.toUpperCase() ||
+                    "U"}
+                </AvatarFallback>
+              </Avatar>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-600">
-                      #{thread.category}
-                    </Badge>
-                    <span className="text-sm text-gray-500">•</span>
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src={thread.profiles?.avatar_url || "/placeholder.svg"} />
-                        <AvatarFallback className="text-xs">
-                          {thread.profiles?.username?.[0]?.toUpperCase() || "A"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-gray-600">{thread.profiles?.username || "Anonymous"}</span>
-                    </div>
-                    <span className="text-sm text-gray-500">•</span>
-                    <div className="flex items-center space-x-1 text-sm text-gray-500">
-                      <Clock className="h-3 w-3" />
-                      <span>{new Date(thread.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  <Link href={`/thread/${thread.id}`} className="block group">
-                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-2">
-                      {thread.title}
-                    </h3>
-                    <p className="text-gray-600 line-clamp-2 mb-3">{thread.content.substring(0, 200)}...</p>
-                  </Link>
-
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <MessageCircle className="h-4 w-4" />
-                      <span>0 replies</span>
-                    </div>
+              {/* Thread Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-medium text-gray-900">
+                    {thread.profiles?.full_name || thread.profiles?.username || "Anonymous"}
+                  </span>
+                  <span className="text-sm text-gray-500">•</span>
+                  <div className="flex items-center gap-1 text-sm text-gray-500">
+                    <Clock className="w-3 h-3" />
+                    {formatDistanceToNow(new Date(thread.created_at), { addSuffix: true })}
                   </div>
                 </div>
+
+                {/* Category Badge */}
+                {thread.categories && (
+                  <Link href={`/category/${thread.categories.slug}`}>
+                    <Badge
+                      variant="secondary"
+                      className="text-xs mb-2 hover:bg-gray-200 transition-colors"
+                      style={{
+                        backgroundColor: `${thread.categories.color}20`,
+                        color: thread.categories.color,
+                        borderColor: `${thread.categories.color}40`,
+                      }}
+                    >
+                      #{thread.categories.name}
+                    </Badge>
+                  </Link>
+                )}
+
+                {/* Thread Title */}
+                <Link href={`/thread/${thread.id}`}>
+                  <h3 className="text-lg font-semibold text-gray-900 hover:text-lime-600 transition-colors line-clamp-2">
+                    {thread.title}
+                  </h3>
+                </Link>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="pt-0">
+            {/* Thread Content Preview */}
+            <Link href={`/thread/${thread.id}`}>
+              <div className="text-gray-600 text-sm line-clamp-3 mb-4 hover:text-gray-800 transition-colors">
+                {thread.content.replace(/<[^>]*>/g, "").substring(0, 200)}
+                {thread.content.length > 200 && "..."}
+              </div>
+            </Link>
+
+            {/* Thread Actions */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {/* Vote Buttons */}
+                <VoteButtons
+                  threadId={thread.id}
+                  initialUpvotes={thread.upvotes}
+                  initialDownvotes={thread.downvotes}
+                  size="sm"
+                />
+
+                {/* Reply Count */}
+                <Link href={`/thread/${thread.id}`}>
+                  <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+                    <MessageSquare className="w-4 h-4 mr-1" />
+                    {thread.reply_count} {thread.reply_count === 1 ? "reply" : "replies"}
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Read More */}
+              <Link href={`/thread/${thread.id}`}>
+                <Button variant="ghost" size="sm" className="text-lime-600 hover:text-lime-700">
+                  Read more
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   )
