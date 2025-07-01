@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/alert-dialog"
 import { toast } from "@/hooks/use-toast"
 import { Trash2, Shield, Bell, Eye } from "lucide-react"
 
