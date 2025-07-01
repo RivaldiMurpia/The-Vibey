@@ -7,26 +7,21 @@ export interface UploadResult {
 
 export async function uploadAvatar(file: File, userId: string): Promise<UploadResult> {
   try {
-    // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"]
     if (!allowedTypes.includes(file.type)) {
       return { url: null, error: "Invalid file type. Please upload a JPEG, PNG, WebP, or GIF image." }
     }
 
-    // Validate file size (5MB limit)
     const maxSize = 5 * 1024 * 1024 // 5MB in bytes
     if (file.size > maxSize) {
       return { url: null, error: "File size too large. Please upload an image smaller than 5MB." }
     }
 
-    // Generate unique filename
     const fileExt = file.name.split(".").pop()
     const fileName = `${userId}/${Date.now()}.${fileExt}`
 
-    // Delete existing avatar if it exists
     await deleteExistingAvatar(userId)
 
-    // Upload new avatar
     const { data, error } = await supabase.storage.from("avatars").upload(fileName, file, {
       cacheControl: "3600",
       upsert: false,
@@ -37,11 +32,7 @@ export async function uploadAvatar(file: File, userId: string): Promise<UploadRe
       return { url: null, error: "Failed to upload image. Please try again." }
     }
 
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(data.path)
-
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(data.path)
     return { url: publicUrl, error: null }
   } catch (error) {
     console.error("Upload error:", error)
@@ -49,44 +40,30 @@ export async function uploadAvatar(file: File, userId: string): Promise<UploadRe
   }
 }
 
-export async function deleteExistingAvatar(userId: string): Promise<void> {
+export async function deleteExistingAvatar(userId: string): Promise<boolean> {
   try {
-    // List all files in the user's folder
-    const { data: files, error } = await supabase.storage.from("avatars").list(userId)
+    const { data: files, error: listError } = await supabase.storage.from("avatars").list(userId)
 
-    if (error || !files) {
-      return // No existing files or error listing
+    if (listError) {
+        console.error("Error listing files for deletion:", listError);
+        return false;
+    }
+    
+    if (!files || files.length === 0) {
+      return true; // Tidak ada yang perlu dihapus, anggap sukses
     }
 
-    // Delete all existing files
     const filePaths = files.map((file) => `${userId}/${file.name}`)
-    if (filePaths.length > 0) {
-      await supabase.storage.from("avatars").remove(filePaths)
-    }
-  } catch (error) {
-    console.error("Error deleting existing avatar:", error)
-    // Don't throw error, just log it
-  }
-}
+    const { error: removeError } = await supabase.storage.from("avatars").remove(filePaths)
 
-export async function getAvatarUrl(userId: string): Promise<string | null> {
-  try {
-    const { data: files, error } = await supabase.storage.from("avatars").list(userId)
-
-    if (error || !files || files.length === 0) {
-      return null
+    if(removeError) {
+        console.error("Error deleting existing avatar:", removeError);
+        return false;
     }
 
-    // Get the most recent file
-    const latestFile = files.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(`${userId}/${latestFile.name}`)
-
-    return publicUrl
+    return true;
   } catch (error) {
-    console.error("Error getting avatar URL:", error)
-    return null
+    console.error("Unexpected error in deleteExistingAvatar:", error)
+    return false;
   }
 }
