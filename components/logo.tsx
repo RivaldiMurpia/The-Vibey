@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils"
-import { Code2 } from "lucide-react"
 
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl"
@@ -23,10 +22,13 @@ export function Logo({ size = "md", showText = false, className }: LogoProps) {
   }
 
   return (
-    <div className={cn("flex items-center justify-center gap-2", className)}>
-      <div className={cn("bg-gradient-to-br from-lime-400 to-green-600 rounded-lg", sizeClasses[size])}>
-        <Code2 className="w-5 h-5 text-white" />
-      </div>
+    <div className={cn("flex items-center gap-2", className)}>
+      <svg width="100" height="100" viewBox="0 0 100 100" className={sizeClasses[size]}>
+        {/* V Shape */}
+        <polygon points="50,90 10,10 35,10 50,55 65,10 90,10" className="fill-gray-900 dark:fill-white" />
+        {/* Spark */}
+        <path d="M 90 5 L 95 10 L 90 15 L 85 10 Z" className="fill-lime-500" />
+      </svg>
       {showText && (
         <span className={cn("font-bold text-gray-900 dark:text-white", textSizeClasses[size])}>The Vibey</span>
       )}
